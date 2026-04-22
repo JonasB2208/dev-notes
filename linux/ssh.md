@@ -1,4 +1,8 @@
-# ssh config file example
+# SSH Config
+
+Mehrere SSH Keys verwalten z.B. für GitHub, Server, etc.
+
+## Config Datei Beispiel
 
 ```bash
 Host github
@@ -7,14 +11,32 @@ Host github
     IdentityFile ~/.ssh/github
 ```
 
-# copy private key in file
+## Private Key einrichten
 
-## Create the file, copy the key, then save and exit
+Datei erstellen und Key reinkopieren:
+
 ```bash
 nano ~/.ssh/github
 ```
 
-## change rights
+Rechte setzen (600 = nur du kannst lesen/schreiben, niemand sonst):
+
 ```bash
 chmod 600 ~/.ssh/github
+```
+
+## SSH Verbindung testen
+
+```bash
+ssh -T git@github.com
+```
+
+## Häufige Fehler
+
+**Permission denied** → Rechte nicht korrekt gesetzt, `chmod 600` nochmal ausführen
+
+**Key wird nicht erkannt** → Prüfen ob der richtige Key in der Config steht:
+
+```bash
+cat ~/.ssh/config
 ```
