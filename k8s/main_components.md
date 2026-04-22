@@ -1,11 +1,11 @@
 # Main Kubernetes Components
 
-## Deployments
-- deklarierte beschreibung der anwendung
-
 ## StatefullSet
 - wird benötigt wenn die gleichen daten in mehreren pods benötigt werden
 - z.b. eine sql datenbank
+
+## Deployments
+- deklarierte beschreibung der anwendung
 
 ### Beispiel
 ```yaml
