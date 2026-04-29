@@ -1,0 +1,99 @@
+apiVersion: apps/v1         # API Version - für Deployments immer apps/v1
+kind: Deployment            # Typ der Ressource
+metadata:
+  name: nginx          # ÄNDERN - Name des Deployments
+  namespace: default        # ÄNDERN - Namespace, default = kein Namespace angegeben
+  labels:                   # OPTIONAL - Labels für das Deployment selbst
+    app: meine-app          # ÄNDERN
+    version: "1.0"          # OPTIONAL - eigene Labels möglich
+  annotations:              # OPTIONAL - Metadaten die nicht als Selector genutzt werden
+    description: "Meine App" # OPTIONAL
+
+spec:
+  replicas: 3               # ÄNDERN - Anzahl der Pods die laufen sollen
+  
+  selector:                 # Definiert welche Pods zu diesem Deployment gehören
+    matchLabels:
+      app: meine-app        # ÄNDERN - muss mit template.labels übereinstimmen
+
+  strategy:                 # OPTIONAL - wie Updates ausgerollt werden
+    type: RollingUpdate     # RollingUpdate = schrittweise | Recreate = alle auf einmal neu starten
+    rollingUpdate:
+      maxSurge: 1           # OPTIONAL - wie viele extra Pods während Update erlaubt sind
+      maxUnavailable: 0     # OPTIONAL - wie viele Pods während Update nicht verfügbar sein dürfen
+
+  template:                 # Vorlage für jeden Pod
+    metadata:
+      labels:
+        app: meine-app      # ÄNDERN - muss mit selector.matchLabels übereinstimmen
+        version: "1.0"      # OPTIONAL
+    
+    spec:
+      containers:
+      - name: meine-app     # ÄNDERN - Name des Containers
+        image: nginx:latest # ÄNDERN - Docker Image, immer konkrete Version statt latest verwenden
+        imagePullPolicy: Always  # OPTIONAL - Always | IfNotPresent | Never
+
+        ports:
+        - containerPort: 80       # ÄNDERN - Port der App im Container
+          name: http              # OPTIONAL - Name des Ports
+          protocol: TCP           # OPTIONAL - TCP | UDP, default ist TCP
+
+        env:                      # OPTIONAL - Umgebungsvariablen direkt setzen
+        - name: APP_ENV
+          value: "production"     # ÄNDERN
+
+        envFrom:                  # OPTIONAL - alle Werte aus ConfigMap oder Secret laden
+        - configMapRef:
+            name: meine-app-config  # ÄNDERN - Name der ConfigMap
+        - secretRef:
+            name: meine-app-secret  # ÄNDERN - Name des Secrets
+
+        env:                        # OPTIONAL - einzelne Werte aus ConfigMap oder Secret laden
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: meine-app-secret  # ÄNDERN - Name des Secrets
+              key: DB_PASSWORD        # ÄNDERN - Key im Secret
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: meine-app-config  # ÄNDERN - Name der ConfigMap
+              key: DATABASE_URL       # ÄNDERN - Key in der ConfigMap
+
+        resources:                  # OPTIONAL aber empfohlen - Ressourcen begrenzen
+          requests:                 # Minimum was der Pod bekommt
+            memory: "64Mi"          # ÄNDERN - z.B. 64Mi, 128Mi, 256Mi, 1Gi
+            cpu: "250m"             # ÄNDERN - 250m = 0.25 CPU, 1000m = 1 CPU
+          limits:                   # Maximum was der Pod nutzen darf
+            memory: "128Mi"         # ÄNDERN - bei Überschreitung wird Pod neugestartet
+            cpu: "500m"             # ÄNDERN - bei Überschreitung wird CPU gedrosselt
+
+        livenessProbe:              # OPTIONAL - k8s prüft ob der Container noch läuft
+          httpGet:
+            path: /health           # ÄNDERN - health check endpoint
+            port: 80                # ÄNDERN
+          initialDelaySeconds: 10   # OPTIONAL - wie lange warten bevor erster Check
+          periodSeconds: 5          # OPTIONAL - wie oft prüfen
+          failureThreshold: 3       # OPTIONAL - wie viele Fehler bis Neustart
+
+        readinessProbe:             # OPTIONAL - k8s prüft ob Container bereit für Traffic ist
+          httpGet:
+            path: /ready            # ÄNDERN
+            port: 80                # ÄNDERN
+          initialDelaySeconds: 5    # OPTIONAL
+          periodSeconds: 3          # OPTIONAL
+
+        volumeMounts:               # OPTIONAL - Volumes in den Container einbinden
+        - name: mein-storage        # ÄNDERN - muss mit volumes.name übereinstimmen
+          mountPath: /data          # ÄNDERN - Pfad im Container
+
+      volumes:                      # OPTIONAL - Volumes definieren
+      - name: mein-storage          # ÄNDERN
+        persistentVolumeClaim:
+          claimName: meine-app-pvc  # ÄNDERN - Name des PersistentVolumeClaim
+
+      restartPolicy: Always         # OPTIONAL - Always | OnFailure | Never, default ist Always
+
+      imagePullSecrets:             # OPTIONAL - falls Image aus privater Registry
+      - name: registry-secret       # ÄNDERN - Name des Registry Secrets
